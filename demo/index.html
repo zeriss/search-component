@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <title>search-component demo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+
+    <link rel="import" href="../search-component.html">
+
+    <style is="custom-style" include="demo-pages-shared-styles">
+    </style>
+  </head>
+  <body>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic search-component Demo</h3>
+      <demo-snippet>
+        <template id="wrapperTemplate" is="dom-bind">
+          <search-component id="remoteSearch" remote-mode="true" on-remote-search="remote" remote-search-promise="[[fakeRemoteSearch]]" search-term="{{searchTerm}}"></search-component>
+          <p>{{searchTerm}}</p>
+        </template>
+      </demo-snippet>
+    </div>
+
+    <script>
+document.querySelector('#wrapperTemplate').fakeRemoteSearch = function (term) {
+  return Promise.resolve([{label:'pomme',id:'pommeId'},{label:'banane',id:'banaeId'},{label:'framboise',id:'framboiseId'},{label:'badiane',id:'badianeId'}]);
+};
+
+  document.addEventListener('WebComponentsReady', function() {
+    var searchComponent = document.querySelector('search-component');
+    searchComponent.addEventListener('remote-search', function(e){
+      console.log('hook\n',e.detail);
+      searchComponent.showResults([{label:'text1',value:'res1'},{label:'text2',value:'res2'}]);
+    });
+
+  });
+
+
+  </script>
+
+
+
+  </body>
+</html>
