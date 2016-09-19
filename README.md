@@ -5,7 +5,7 @@ An autocomplete search web component based on official paper elements.
 
 ## Demo
 
-[documentation & demo](https://zeriss.github.io/search-component/demo/index.html)
+[documentation & demo](https://zeriss.github.io/search-component/components/search-component/)
 
 ## Install the Polymer-CLI
 
