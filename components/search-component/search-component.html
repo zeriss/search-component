@@ -1,0 +1,157 @@
+<!-- -->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-material/paper-material.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-button/paper-button.html">
+
+<!--
+`search-component`
+autocomplete search component
+
+@demo demo/index.html
+-->
+
+<dom-module id="search-component">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <paper-input type="text"
+          id="searchInput"
+          label="[[inputPlaceholder]]"
+          value=""
+          autofocus
+          on-change="_searchInputChanged"
+          on-keyup="_onKeyUp">
+    </paper-input>
+    <iron-collapse id="collapse">
+      <paper-material>
+        <div class="collapse-content">
+          <template id="resultList" is="dom-repeat" items="[[searchResults]]">
+            <paper-item>
+              <paper-button on-tap="_chooseItem" value="{{item.id}}">{{item.label}}</paper-button>
+            </paper-item>
+          </template>
+        </div>
+      </paper-material>
+    </iron-collapse>
+  </template>
+
+  <script>
+    "use strict";
+    Polymer({
+
+      is: 'search-component',
+
+      properties: {
+        inputPlaceholder: {
+            type: String,
+            value: "Default placeholder text"
+        },
+        searchLabel: {
+            type: String,
+            value: "Search"
+        },
+        searchTerm: {
+            type: String,
+            value: ""
+        },
+        list: {
+          type:Array,
+          value:[]
+        },
+        excludeList: {
+          type:Array,
+          value:[]
+        },
+        label: {
+          type:String,
+          value:'label'
+        },
+        minLength: {
+          type:'Number',
+          value:3
+        },
+        searchResults: {
+          type: Array,
+          values: [],
+          observer: "_resultsChanged"
+        },
+        remoteMode: {
+          type:Boolean,
+          value:"false"
+        },
+        remoteSearchPromise: {
+          type:Object
+        }
+
+      },
+      ready: function() {
+        console.log("Component loaded!");
+      },
+
+      _chooseItem: function(event,sender) {
+        var clickedButtonValue = event.path[1].value;
+        this.set('searchTerm', clickedButtonValue);
+        this.$.collapse.toggle();
+      },
+
+      _onKeyUp: function(event) {
+        var _this = this;
+        var value = event.target.value;
+        if (this.remoteMode) {
+          if (value.length >= _this.minLength) {
+            this.debounce('remoteSearch', function () {
+            _this._remoteSearch(value);
+            }, 300);
+          }
+        } else {
+          this.localSearch(value);
+        }
+      },
+      _localSearch: function(value) {
+        var results = this.items.filter(function(item){
+          return list[this.label].test(new RegExp(value, 'i'));
+        });
+        this.set('searchResults',results);
+      },
+
+      _remoteSearch: function(value) {
+        var _this = this;
+        console.log('from onkeyup\n',value);
+        //this.fire('remote-search',value);
+        this.remoteSearchPromise(value).then(function(results){
+          // remove items from exclude list
+          var filterResults = results.filter(function(row){
+            return !_this.excludeList.includes(row[_this.label]);
+          });
+          _this.set('searchResults',filterResults);
+        });
+      },
+
+      _resultsChanged: function(results) {
+        var collapse = this.$.collapse;
+        if (results.length > 0 && !collapse.opened) {
+           this.$.resultList.render();
+           collapse.toggle();
+        } else if (results.length == 0 && collapse.opened) {
+           collapse.toggle();
+        }
+      },
+
+      _searchInputChanged: function(event) {
+        //nothing to do
+      },
+
+      showResults: function(results) {
+          console.log('back to search component\n',results);
+        this.set('searchResults',results);
+      },
+
+    });
+  </script>
+</dom-module>
