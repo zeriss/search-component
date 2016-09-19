@@ -1,6 +1,11 @@
 # \<search-component\>
 
-autocomplete search component
+An autocomplete search web component based on official paper elements.
+
+
+## Demo
+
+[documentation & demo](https://zeriss.github.io/search-component/demo/index.html)
 
 ## Install the Polymer-CLI
 
