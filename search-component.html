@@ -13,29 +13,34 @@ autocomplete search component
 @demo demo/index.html
 -->
 
-<dom-module id="search-component">
+<dom-module id="search-component" assetpath="../bower_components/search-component/">
   <template>
     <style>
       :host {
         display: block;
       }
+      iron-list {
+        height: 20vh; /* don't use % values unless the parent element is sized. */
+      }
     </style>
-    <paper-input type="text"
-          id="searchInput"
-          label="[[inputPlaceholder]]"
-          value=""
-          autofocus
-          on-change="_searchInputChanged"
-          on-keyup="_onKeyUp">
+
+    <paper-input type="text" id="searchInput" label="[[inputPlaceholder]]" value="{{searchInput}}" autofocus="" on-change="_searchInputChanged" on-keyup="_onKeyUp">
     </paper-input>
-    <iron-collapse id="collapse">
+
+    <iron-collapse id="collapse" opened="{{true}}">
       <paper-material>
         <div class="collapse-content">
-          <template id="resultList" is="dom-repeat" items="[[searchResults]]">
-            <paper-item>
-              <paper-button on-tap="_chooseItem" value="{{item.id}}">{{item.label}}</paper-button>
-            </paper-item>
-          </template>
+          <iron-list items="[[searchResults]]">
+            <template>
+              <div>
+                <paper-item>
+              <paper-button on-tap="_chooseItem" value="{{item.id}}">
+                {{computeItemLabel(item)}}</paper-button>
+              </paper-item>
+              </div>
+            </template>
+          </iron-list>
+
         </div>
       </paper-material>
     </iron-collapse>
@@ -52,6 +57,10 @@ autocomplete search component
             type: String,
             value: "Default placeholder text"
         },
+        searchInput: {
+            type: String,
+            value: ""
+        },
         searchLabel: {
             type: String,
             value: "Search"
@@ -60,9 +69,24 @@ autocomplete search component
             type: String,
             value: ""
         },
-        list: {
-          type:Array,
-          value:[]
+
+        search: {
+          type: String,
+          notify:true
+        },
+        searchResults: {
+          type: Array,
+          value:[{label:'coucou'},{label:'banane'},{label:'poire'}]
+        },
+        selectedItem: {
+          type: Object,
+          value: {},
+          notify:true
+        },
+        selectedValue: {
+          type: String,
+          value: "",
+          notify:true
         },
         excludeList: {
           type:Array,
@@ -76,37 +100,51 @@ autocomplete search component
           type:'Number',
           value:3
         },
-        searchResults: {
+        list: {
           type: Array,
-          values: [],
-          observer: "_resultsChanged"
+          values: []
         },
         remoteMode: {
           type:Boolean,
-          value:false
+          value:"false"
         },
-        remoteSearchPromise: {
+        getRemoteSuggestions: {
           type:Object
         }
 
       },
+      observers: [
+        '_resultsChanged(list.splices)'
+      ],
       ready: function() {
         console.log("Component loaded!");
       },
+      computeItemLabel: function(object) {
+        return object[this.label];
+      },
 
       _chooseItem: function(event,sender) {
-        var clickedButtonValue = event.path[1].value;
-        this.set('searchTerm', clickedButtonValue);
+        var selectedItem = event.model.item;
+        this.fire('item-added', selectedItem);
+        this.searchInput = selectedItem[this.label];
+        this.selectedItem = selectedItem;
+        this.selectedValue = selectedItem.id;
         this.$.collapse.toggle();
       },
 
       _onKeyUp: function(event) {
         var _this = this;
         var value = event.target.value;
+        var collapse = this.$.collapse;
+
         if (this.remoteMode) {
           if (value.length >= _this.minLength) {
             this.debounce('remoteSearch', function () {
-            _this._remoteSearch(value);
+
+            //  _this.getRemoteSuggestions(value).then(function(results){
+            //    _this.list = results;
+            //  });
+            _this.search = value;
             }, 300);
           }
         } else {
@@ -120,37 +158,21 @@ autocomplete search component
         this.set('searchResults',results);
       },
 
-      _remoteSearch: function(value) {
-        var _this = this;
-        console.log('from onkeyup\n',value);
-        //this.fire('remote-search',value);
-        this.remoteSearchPromise(value).then(function(results){
-          // remove items from exclude list
-          var filterResults = results.filter(function(row){
-            return !_this.excludeList.includes(row[_this.label]);
-          });
-          _this.set('searchResults',filterResults);
-        });
-      },
-
-      _resultsChanged: function(results) {
+      showSuggestions: function(results)Â {
         var collapse = this.$.collapse;
-        if (results.length > 0 && !collapse.opened) {
-           this.$.resultList.render();
-           collapse.toggle();
+        if (results.length > 0 ) { //&& !collapse.opened
+          collapse.opened=true;
+          this.set('searchResults',results);
+
+          // collapse.toggle();
         } else if (results.length == 0 && collapse.opened) {
            collapse.toggle();
         }
       },
 
-      _searchInputChanged: function(event) {
+      _searchInputChanged: function(event)Â {
         //nothing to do
-      },
-
-      showResults: function(results) {
-          console.log('back to search component\n',results);
-        this.set('searchResults',results);
-      },
+      }
 
     });
   </script>
